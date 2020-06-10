@@ -501,7 +501,7 @@ mod tests {
         })
     }
 
-    // XXX: There's no `GFp_nistz256_sub` in *ring*; it's logic is inlined into
+    // XXX: There's no `GFp_p256_sub` in *ring*; it's logic is inlined into
     // the point arithmetic functions. Thus, we can't test it.
 
     #[test]
@@ -552,7 +552,7 @@ mod tests {
         })
     }
 
-    // XXX: There's no `GFp_nistz256_div_by_2` in *ring*; it's logic is inlined
+    // XXX: There's no `GFp_p256_div_by_2` in *ring*; it's logic is inlined
     // into the point arithmetic functions. Thus, we can't test it.
 
     #[test]
@@ -588,7 +588,8 @@ mod tests {
         })
     }
 
-    // TODO: Add test vectors that test the range of values above `q`.
+    // There is no `GFp_nistz256_neg` on other targets.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn p256_elem_neg_test() {
         extern "C" {
@@ -790,14 +791,10 @@ mod tests {
         });
     }
 
-    // Keep this in sync with the logic for defining `GFp_USE_LARGE_TABLE` and
-    // with the corresponding code in p256.rs that decides which base point
-    // multiplication to use.
-    #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn p256_point_sum_mixed_test() {
         extern "C" {
-            fn GFp_nistz256_point_add_affine(
+            fn GFp_p256_point_add_affine(
                 r: *mut Limb,   // [p256::COMMON_OPS.num_limbs*3]
                 a: *const Limb, // [p256::COMMON_OPS.num_limbs*3]
                 b: *const Limb, // [p256::COMMON_OPS.num_limbs*2]
@@ -805,14 +802,13 @@ mod tests {
         }
         point_sum_mixed_test(
             &p256::PRIVATE_KEY_OPS,
-            GFp_nistz256_point_add_affine,
+            GFp_p256_point_add_affine,
             test_file!("ops/p256_point_sum_mixed_tests.txt"),
         );
     }
 
     // XXX: There is no `GFp_nistz384_point_add_affine()`.
 
-    #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
     fn point_sum_mixed_test(
         ops: &PrivateKeyOps,
         point_add_affine: unsafe extern "C" fn(
@@ -843,14 +839,14 @@ mod tests {
     #[test]
     fn p256_point_double_test() {
         extern "C" {
-            fn GFp_nistz256_point_double(
+            fn GFp_p256_point_double(
                 r: *mut Limb,   // [p256::COMMON_OPS.num_limbs*3]
                 a: *const Limb, // [p256::COMMON_OPS.num_limbs*3]
             );
         }
         point_double_test(
             &p256::PRIVATE_KEY_OPS,
-            GFp_nistz256_point_double,
+            GFp_p256_point_double,
             test_file!("ops/p256_point_double_tests.txt"),
         );
     }
@@ -1048,12 +1044,10 @@ mod tests {
         p
     }
 
-    #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
     struct AffinePoint {
         xy: [Limb; 2 * MAX_LIMBS],
     }
 
-    #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
     fn consume_affine_point(
         ops: &PrivateKeyOps,
         test_case: &mut test::TestCase,
@@ -1120,12 +1114,18 @@ mod tests {
     ) {
         for i in 0..ops.num_limbs {
             if actual[i] != expected[i] {
-                let mut s = alloc::string::String::new();
+                let mut actual_s = alloc::string::String::new();
+                let mut expected_s = alloc::string::String::new();
                 for j in 0..ops.num_limbs {
                     let formatted = format!("{:016x}", actual[ops.num_limbs - j - 1]);
-                    s.push_str(&formatted);
+                    actual_s.push_str(&formatted);
+                    let formatted = format!("{:016x}", expected[ops.num_limbs - j - 1]);
+                    expected_s.push_str(&formatted);
                 }
-                panic!("Actual != Expected,\nActual = {}", s);
+                panic!(
+                    "Actual != Expected,\nActual = {}, Expected = {}",
+                    actual_s, expected_s
+                );
             }
         }
     }
