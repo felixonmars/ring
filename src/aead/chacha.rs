@@ -16,6 +16,17 @@
 use super::{counter, iv::Iv, quic::Sample, BLOCK_LEN};
 use crate::{c, endian::*};
 
+#[cfg(any(
+    test,
+    not(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "x86",
+        target_arch = "x86_64"
+    ))
+))]
+mod fallback;
+
 #[repr(transparent)]
 pub struct Key([LittleEndian<u32>; KEY_LEN / 4]);
 
@@ -99,30 +110,58 @@ impl Key {
         in_out_len: usize,
         output: *mut u8,
     ) {
-        let iv = match counter {
-            CounterOrIv::Counter(counter) => counter.into(),
-            CounterOrIv::Iv(iv) => {
-                assert!(in_out_len <= 32);
-                iv
-            }
-        };
+        #[cfg(any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        ))]
+        #[inline(always)]
+        pub(super) fn ChaCha20_ctr32(
+            key: &Key,
+            counter: CounterOrIv,
+            input: *const u8,
+            in_out_len: usize,
+            output: *mut u8,
+        ) {
+            let iv = match counter {
+                CounterOrIv::Counter(counter) => counter.into(),
+                CounterOrIv::Iv(iv) => {
+                    assert!(in_out_len <= 32);
+                    iv
+                }
+            };
 
-        /// XXX: Although this takes an `Iv`, this actually uses it like a
-        /// `Counter`.
-        extern "C" {
-            fn GFp_ChaCha20_ctr32(
-                out: *mut u8,
-                in_: *const u8,
-                in_len: c::size_t,
-                key: &Key,
-                first_iv: &Iv,
-            );
+            /// XXX: Although this takes an `Iv`, this actually uses it like a
+            /// `Counter`.
+            extern "C" {
+                fn GFp_ChaCha20_ctr32(
+                    out: *mut u8,
+                    in_: *const u8,
+                    in_len: c::size_t,
+                    key: &Key,
+                    first_iv: &Iv,
+                );
+            }
+
+            GFp_ChaCha20_ctr32(output, input, in_out_len, self, &iv);
         }
 
-        GFp_ChaCha20_ctr32(output, input, in_out_len, self, &iv);
+        #[cfg(not(any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )))]
+        use fallback::ChaCha20_ctr32;
+
+        ChaCha20_ctr32(self, counter, input, in_out_len, output);
     }
 
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(any(
+        test,
+        not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))
+    ))]
     #[inline]
     pub(super) fn words_less_safe(&self) -> &[LittleEndian<u32>; KEY_LEN / 4] {
         &self.0
