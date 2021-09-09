@@ -15,9 +15,11 @@
 // Adapted from the public domain, estream code by D. Bernstein.
 // Adapted from the BoringSSL crypto/chacha/chacha.c.
 
-use super::{CounterOrIv, Key, BLOCK_LEN};
+use super::{CounterOrIv, Key};
 use crate::endian::*;
 use crate::polyfill::ChunksFixedMut;
+
+const BLOCK_LEN: usize = 64; // In bytes
 
 pub(super) fn ChaCha20_ctr32(
     key: &Key,
@@ -109,4 +111,4 @@ fn quarterround(x: &mut State, a: usize, b: usize, c: usize, d: usize) {
     step(x, c, d, b, 7);
 }
 
-type State = [u32; BLOCK_LEN];
+type State = [u32; BLOCK_LEN / 4];
