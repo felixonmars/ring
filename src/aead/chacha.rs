@@ -16,6 +16,14 @@
 use super::{counter, iv::Iv, quic::Sample, BLOCK_LEN};
 use crate::{c, endian::*};
 
+#[cfg(not(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    target_arch = "x86_64"
+)))]
+mod fallback;
+
 #[repr(transparent)]
 pub struct Key([LittleEndian<u32>; KEY_LEN / 4]);
 
@@ -99,6 +107,7 @@ impl Key {
         in_out_len: usize,
         output: *mut u8,
     ) {
+        /*
         let iv = match counter {
             CounterOrIv::Counter(counter) => counter.into(),
             CounterOrIv::Iv(iv) => {
@@ -120,9 +129,13 @@ impl Key {
         }
 
         GFp_ChaCha20_ctr32(output, input, in_out_len, self, &iv);
+        */
+
+        use fallback::ChaCha20_ctr32;
+
+        ChaCha20_ctr32(self, counter, input, in_out_len, output);
     }
 
-    #[cfg(target_arch = "x86_64")]
     #[inline]
     pub(super) fn words_less_safe(&self) -> &[LittleEndian<u32>; KEY_LEN / 4] {
         &self.0

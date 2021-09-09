@@ -64,18 +64,18 @@ pub static COMMON_OPS: CommonOps = CommonOps {
         encoding: PhantomData, // R
     },
 
-    elem_add_impl: GFp_nistz256_add,
-    elem_mul_mont: GFp_nistz256_mul_mont,
-    elem_sqr_mont: GFp_nistz256_sqr_mont,
+    elem_add_impl: p256_add_mont,
+    elem_mul_mont: p256_mul_mont,
+    elem_sqr_mont: p256_sqr_mont,
 
-    point_add_jacobian_impl: GFp_nistz256_point_add,
+    point_add_jacobian_impl: p256_point_add,
 };
 
 pub static PRIVATE_KEY_OPS: PrivateKeyOps = PrivateKeyOps {
     common: &COMMON_OPS,
     elem_inv_squared: p256_elem_inv_squared,
     point_mul_base_impl: p256_point_mul_base_impl,
-    point_mul_impl: GFp_nistz256_point_mul,
+    point_mul_impl: p256_point_mul,
 };
 
 fn p256_elem_inv_squared(a: &Elem<R>) -> Elem<R> {
@@ -133,13 +133,13 @@ fn p256_point_mul_base_impl(g_scalar: &Scalar) -> Point {
     #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
     {
         extern "C" {
-            fn GFp_nistz256_point_mul_base(
+            fn p256_point_mul_base(
                 r: *mut Limb,          // [3][COMMON_OPS.num_limbs]
                 g_scalar: *const Limb, // [COMMON_OPS.num_limbs]
             );
         }
         unsafe {
-            GFp_nistz256_point_mul_base(r.xyz.as_mut_ptr(), g_scalar.limbs.as_ptr());
+            p256_point_mul_base(r.xyz.as_mut_ptr(), g_scalar.limbs.as_ptr());
         }
     }
 
@@ -165,7 +165,7 @@ fn p256_point_mul_base_impl(g_scalar: &Scalar) -> Point {
         );
 
         unsafe {
-            GFp_nistz256_point_mul(
+            p256_point_mul(
                 r.xyz.as_mut_ptr(),
                 g_scalar.limbs.as_ptr(),
                 GENERATOR.0.limbs.as_ptr(),
@@ -184,7 +184,7 @@ pub static PUBLIC_KEY_OPS: PublicKeyOps = PublicKeyOps {
 pub static SCALAR_OPS: ScalarOps = ScalarOps {
     common: &COMMON_OPS,
     scalar_inv_to_mont_impl: p256_scalar_inv_to_mont,
-    scalar_mul_mont: GFp_p256_scalar_mul_mont,
+    scalar_mul_mont: p256_scalar_mul_mont,
 };
 
 pub static PUBLIC_SCALAR_OPS: PublicScalarOps = PublicScalarOps {
@@ -224,19 +224,22 @@ fn p256_scalar_inv_to_mont(a: &Scalar<Unencoded>) -> Scalar<R> {
 
     #[inline]
     fn mul(a: &Scalar<R>, b: &Scalar<R>) -> Scalar<R> {
-        binary_op(GFp_p256_scalar_mul_mont, a, b)
+        binary_op(p256_scalar_mul_mont, a, b)
     }
 
     #[inline]
     fn sqr(a: &Scalar<R>) -> Scalar<R> {
-        unary_op(GFp_p256_scalar_sqr_mont, a)
+        // unary_op(p256_scalar_sqr_mont, a)
+        let mut tmp = Scalar::zero();
+        unsafe { p256_scalar_sqr_rep_mont(tmp.limbs.as_mut_ptr(), a.limbs.as_ptr(), 1) }
+        tmp
     }
 
     // Returns (`a` squared `squarings` times) * `b`.
     fn sqr_mul(a: &Scalar<R>, squarings: Limb, b: &Scalar<R>) -> Scalar<R> {
         debug_assert!(squarings >= 1);
         let mut tmp = Scalar::zero();
-        unsafe { GFp_p256_scalar_sqr_rep_mont(tmp.limbs.as_mut_ptr(), a.limbs.as_ptr(), squarings) }
+        unsafe { p256_scalar_sqr_rep_mont(tmp.limbs.as_mut_ptr(), a.limbs.as_ptr(), squarings) }
         mul(&tmp, b)
     }
 
@@ -244,9 +247,9 @@ fn p256_scalar_inv_to_mont(a: &Scalar<Unencoded>) -> Scalar<R> {
     fn sqr_mul_acc(acc: &mut Scalar<R>, squarings: Limb, b: &Scalar<R>) {
         debug_assert!(squarings >= 1);
         unsafe {
-            GFp_p256_scalar_sqr_rep_mont(acc.limbs.as_mut_ptr(), acc.limbs.as_ptr(), squarings)
+            p256_scalar_sqr_rep_mont(acc.limbs.as_mut_ptr(), acc.limbs.as_ptr(), squarings)
         }
-        binary_op_assign(GFp_p256_scalar_mul_mont, acc, b);
+        binary_op_assign(p256_scalar_mul_mont, acc, b);
     }
 
     fn to_mont(a: &Scalar) -> Scalar<R> {
@@ -258,7 +261,7 @@ fn p256_scalar_inv_to_mont(a: &Scalar<Unencoded>) -> Scalar<R> {
             m: PhantomData,
             encoding: PhantomData,
         };
-        binary_op(GFp_p256_scalar_mul_mont, a, &N_RR)
+        binary_op(p256_scalar_mul_mont, a, &N_RR)
     }
 
     // Indexes into `d`.
@@ -338,43 +341,43 @@ fn p256_scalar_inv_to_mont(a: &Scalar<Unencoded>) -> Scalar<R> {
 }
 
 extern "C" {
-    fn GFp_nistz256_add(
+    fn p256_add_mont(
         r: *mut Limb,   // [COMMON_OPS.num_limbs]
         a: *const Limb, // [COMMON_OPS.num_limbs]
         b: *const Limb, // [COMMON_OPS.num_limbs]
     );
-    fn GFp_nistz256_mul_mont(
+    fn p256_mul_mont(
         r: *mut Limb,   // [COMMON_OPS.num_limbs]
         a: *const Limb, // [COMMON_OPS.num_limbs]
         b: *const Limb, // [COMMON_OPS.num_limbs]
     );
-    fn GFp_nistz256_sqr_mont(
+    fn p256_sqr_mont(
         r: *mut Limb,   // [COMMON_OPS.num_limbs]
         a: *const Limb, // [COMMON_OPS.num_limbs]
     );
 
-    fn GFp_nistz256_point_add(
+    fn p256_point_add(
         r: *mut Limb,   // [3][COMMON_OPS.num_limbs]
         a: *const Limb, // [3][COMMON_OPS.num_limbs]
         b: *const Limb, // [3][COMMON_OPS.num_limbs]
     );
-    fn GFp_nistz256_point_mul(
+    fn p256_point_mul(
         r: *mut Limb,          // [3][COMMON_OPS.num_limbs]
         p_scalar: *const Limb, // [COMMON_OPS.num_limbs]
         p_x: *const Limb,      // [COMMON_OPS.num_limbs]
         p_y: *const Limb,      // [COMMON_OPS.num_limbs]
     );
 
-    fn GFp_p256_scalar_mul_mont(
+    fn p256_scalar_mul_mont(
         r: *mut Limb,   // [COMMON_OPS.num_limbs]
         a: *const Limb, // [COMMON_OPS.num_limbs]
         b: *const Limb, // [COMMON_OPS.num_limbs]
     );
-    fn GFp_p256_scalar_sqr_mont(
+    fn p256_scalar_sqr_mont(
         r: *mut Limb,   // [COMMON_OPS.num_limbs]
         a: *const Limb, // [COMMON_OPS.num_limbs]
     );
-    fn GFp_p256_scalar_sqr_rep_mont(
+    fn p256_scalar_sqr_rep_mont(
         r: *mut Limb,   // [COMMON_OPS.num_limbs]
         a: *const Limb, // [COMMON_OPS.num_limbs]
         rep: Limb,

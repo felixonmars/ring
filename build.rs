@@ -47,11 +47,14 @@ const RING_SRCS: &[(&[&str], &str)] = &[
     (&[AARCH64, ARM, X86_64, X86, RV64], "crypto/crypto.c"),
     (&[AARCH64, ARM, X86_64, X86, RV64], "crypto/curve25519/curve25519.c"),
     (&[AARCH64, ARM, X86_64, X86, RV64], "crypto/fipsmodule/ec/ecp_nistz.c"),
-    (&[AARCH64, ARM, X86_64, X86, RV64], "crypto/fipsmodule/ec/ecp_nistz256.c"),
-    (&[AARCH64, ARM, X86_64, X86, RV64], "crypto/fipsmodule/ec/gfp_p256.c"),
-    (&[AARCH64, ARM, X86_64, X86, RV64], "crypto/fipsmodule/ec/gfp_p384.c"),
+    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/ecp_nistz256.c"),
+    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/gfp_p256.c"),
+    (&[AARCH64, ARM, X86_64, X86], "crypto/fipsmodule/ec/gfp_p384.c"),
 
     (&[RV64], "crypto/fipsmodule/bn/asm.c"),
+    (&[RV64], "crypto/fipsmodule/ec/p256.c"),
+    (&[RV64], "crypto/fipsmodule/ec/p384.c"),
+    (&[RV64], "crypto/fipsmodule/ec/gfp_p256.new.c"),
 
     (&[X86_64, X86], "crypto/cpu-intel.c"),
 
@@ -114,6 +117,10 @@ const RING_INCLUDES: &[&str] =
       "crypto/fipsmodule/bn/internal.h",
       "crypto/fipsmodule/ec/ecp_nistz256_table.inl",
       "crypto/fipsmodule/ec/ecp_nistz384.inl",
+      "crypto/fipsmodule/ec/ecp_nistz384.new.inl",
+      "crypto/fipsmodule/ec/p256_shared.h",
+      "crypto/fipsmodule/ec/util.h",
+      "crypto/fipsmodule/ec/p256_table.h",
       "crypto/fipsmodule/ec/ecp_nistz.h",
       "crypto/fipsmodule/ec/ecp_nistz384.h",
       "crypto/fipsmodule/ec/ecp_nistz256.h",
@@ -131,6 +138,8 @@ const RING_INCLUDES: &[&str] =
       "include/GFp/type_check.h",
       "third_party/fiat/curve25519_32.h",
       "third_party/fiat/curve25519_64.h",
+      "third_party/fiat/p256_64.h",
+      "third_party/fiat/p256_32.h",
     ];
 
 #[rustfmt::skip]

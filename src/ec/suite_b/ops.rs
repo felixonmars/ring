@@ -507,11 +507,11 @@ mod tests {
     #[test]
     fn p384_elem_sub_test() {
         extern "C" {
-            fn GFp_p384_elem_sub(r: *mut Limb, a: *const Limb, b: *const Limb);
+            fn p384_elem_sub(r: *mut Limb, a: *const Limb, b: *const Limb);
         }
         elem_sub_test(
             &p384::COMMON_OPS,
-            GFp_p384_elem_sub,
+            p384_elem_sub,
             test_file!("ops/p384_elem_sum_tests.txt"),
         );
     }
@@ -558,11 +558,11 @@ mod tests {
     #[test]
     fn p384_elem_div_by_2_test() {
         extern "C" {
-            fn GFp_p384_elem_div_by_2(r: *mut Limb, a: *const Limb);
+            fn p384_elem_div_by_2(r: *mut Limb, a: *const Limb);
         }
         elem_div_by_2_test(
             &p384::COMMON_OPS,
-            GFp_p384_elem_div_by_2,
+            p384_elem_div_by_2,
             test_file!("ops/p384_elem_div_by_2_tests.txt"),
         );
     }
@@ -589,26 +589,28 @@ mod tests {
     }
 
     // TODO: Add test vectors that test the range of values above `q`.
+    /* TODO(meow): test in riscv
     #[test]
     fn p256_elem_neg_test() {
         extern "C" {
-            fn GFp_nistz256_neg(r: *mut Limb, a: *const Limb);
+            fn fiat_p256_neg(r: *mut Limb, a: *const Limb);
         }
         elem_neg_test(
             &p256::COMMON_OPS,
-            GFp_nistz256_neg,
+            fiat_p256_neg,
             test_file!("ops/p256_elem_neg_tests.txt"),
         );
     }
+    */
 
     #[test]
     fn p384_elem_neg_test() {
         extern "C" {
-            fn GFp_p384_elem_neg(r: *mut Limb, a: *const Limb);
+            fn p384_elem_neg(r: *mut Limb, a: *const Limb);
         }
         elem_neg_test(
             &p384::COMMON_OPS,
-            GFp_p384_elem_neg,
+            p384_elem_neg,
             test_file!("ops/p384_elem_neg_tests.txt"),
         );
     }
@@ -703,11 +705,11 @@ mod tests {
     #[test]
     fn p256_scalar_square_test() {
         extern "C" {
-            fn GFp_p256_scalar_sqr_rep_mont(r: *mut Limb, a: *const Limb, rep: Limb);
+            fn p256_scalar_sqr_rep_mont(r: *mut Limb, a: *const Limb, rep: Limb);
         }
         scalar_square_test(
             &p256::SCALAR_OPS,
-            GFp_p256_scalar_sqr_rep_mont,
+            p256_scalar_sqr_rep_mont,
             test_file!("ops/p256_scalar_square_tests.txt"),
         );
     }
@@ -797,7 +799,7 @@ mod tests {
     #[test]
     fn p256_point_sum_mixed_test() {
         extern "C" {
-            fn GFp_nistz256_point_add_affine(
+            fn p256_point_add_affine(
                 r: *mut Limb,   // [p256::COMMON_OPS.num_limbs*3]
                 a: *const Limb, // [p256::COMMON_OPS.num_limbs*3]
                 b: *const Limb, // [p256::COMMON_OPS.num_limbs*2]
@@ -805,7 +807,7 @@ mod tests {
         }
         point_sum_mixed_test(
             &p256::PRIVATE_KEY_OPS,
-            GFp_nistz256_point_add_affine,
+            p256_point_add_affine,
             test_file!("ops/p256_point_sum_mixed_tests.txt"),
         );
     }
@@ -843,14 +845,14 @@ mod tests {
     #[test]
     fn p256_point_double_test() {
         extern "C" {
-            fn GFp_nistz256_point_double(
+            fn p256_point_double(
                 r: *mut Limb,   // [p256::COMMON_OPS.num_limbs*3]
                 a: *const Limb, // [p256::COMMON_OPS.num_limbs*3]
             );
         }
         point_double_test(
             &p256::PRIVATE_KEY_OPS,
-            GFp_nistz256_point_double,
+            p256_point_double,
             test_file!("ops/p256_point_double_tests.txt"),
         );
     }
@@ -858,14 +860,14 @@ mod tests {
     #[test]
     fn p384_point_double_test() {
         extern "C" {
-            fn GFp_nistz384_point_double(
+            fn nistz384_point_double(
                 r: *mut Limb,   // [p384::COMMON_OPS.num_limbs*3]
                 a: *const Limb, // [p384::COMMON_OPS.num_limbs*3]
             );
         }
         point_double_test(
             &p384::PRIVATE_KEY_OPS,
-            GFp_nistz384_point_double,
+            nistz384_point_double,
             test_file!("ops/p384_point_double_tests.txt"),
         );
     }
