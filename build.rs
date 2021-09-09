@@ -110,6 +110,7 @@ const RING_INCLUDES: &[&str] =
     &[
       "crypto/curve25519/curve25519_tables.h",
       "crypto/curve25519/internal.h",
+      "crypto/fipsmodule/bn/bn_local.h",
       "crypto/fipsmodule/bn/internal.h",
       "crypto/fipsmodule/ec/ecp_nistz256_table.inl",
       "crypto/fipsmodule/ec/ecp_nistz384.inl",
