@@ -171,7 +171,7 @@ int GFp_bn_from_montgomery_in_place(BN_ULONG r[], size_t num_r, BN_ULONG a[],
 #  define BN_DEC_FMT1     "%lu"
 #  define BN_DEC_FMT2     "%019lu"
 
-BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
+BN_ULONG GFp_bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
                       size_t n)
 {
     BN_ULONG t1, t2;
@@ -275,7 +275,7 @@ BN_ULONG bn_sub_words(BN_ULONG *r, const BN_ULONG *a, const BN_ULONG *b,
  * versions. Assembler vs. assembler improvement coefficients can
  * [and are known to] differ and are to be documented elsewhere.
  */
-void bn_mul_mont(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp,
+void GFp_bn_mul_mont(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp,
                 const BN_ULONG *np, const BN_ULONG *n0p, size_t num)
 {
     BN_ULONG c0, c1, ml, *tp, n0;
@@ -288,7 +288,7 @@ void bn_mul_mont(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp,
 #   if 0                        /* template for platform-specific
                                  * implementation */
     if (ap == bp)
-        return bn_sqr_mont(rp, ap, np, n0p, num);
+        return GFp_bn_sqr_mont(rp, ap, np, n0p, num);
 #   endif
     vp = tp = alloca((num + 2) * sizeof(BN_ULONG));
 
@@ -351,7 +351,7 @@ void bn_mul_mont(BN_ULONG *rp, const BN_ULONG *ap, const BN_ULONG *bp,
     }
 
     if (tp[num] != 0 || tp[num - 1] >= np[num - 1]) {
-        c0 = bn_sub_words(rp, tp, np, num);
+        c0 = GFp_bn_sub_words(rp, tp, np, num);
         if (tp[num] != 0 || c0 == 0) {
             for (i = 0; i < num + 2; i++)
                 vp[i] = 0;
