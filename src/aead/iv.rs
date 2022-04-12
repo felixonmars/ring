@@ -16,7 +16,7 @@
 ///
 /// Intentionally not `Clone` to ensure each is used only once.
 #[repr(C)]
-pub struct Iv(pub [u8; IV_LEN]);
+pub struct Iv([u8; IV_LEN]);
 
 pub const IV_LEN: usize = 16;
 

@@ -44,7 +44,7 @@ pub(super) fn ChaCha20_ctr32(
             iv
         }
     };
-    let counter = <[LittleEndian::<u32>;4]>::from_byte_array(&iv.0);
+    let counter = <[LittleEndian::<u32>;4]>::from_byte_array(&iv.into_bytes_less_safe());
 
     let mut state = [
         SIGMA[0], SIGMA[1], SIGMA[2], SIGMA[3], key[0].into(), key[1].into(), key[2].into(), key[3].into(), key[4].into(), key[5].into(),
